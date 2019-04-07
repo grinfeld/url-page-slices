@@ -19,8 +19,8 @@ public class InputFromUrlsDataProcessor implements InputDataProcessor<String> {
         if (sources == null)
             return Flux.error(new IllegalArgumentException("sources couldn't be null"));
         return Flux.fromArray(sources).flatMap(s ->
-            readingSlices.readFrom(s).doOnNext(d -> System.out.println(Thread.currentThread().getName() + " --- " + d))
-                .subscribeOn(Schedulers.parallel())
-        ).doOnNext(d -> System.out.println(Thread.currentThread().getName() + " --- " + d));
+                // making read from every source by different thread in parallel
+            readingSlices.readFrom(s).subscribeOn(Schedulers.parallel())
+        );
     }
 }

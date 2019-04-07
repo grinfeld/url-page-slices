@@ -1,6 +1,7 @@
 package com.mikerusoft.cassandra.pageslices.urlreader;
 
 import com.mikerusoft.cassandra.pageslices.model.jpa.Slice;
+import com.mikerusoft.cassandra.pageslices.utils.Utils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -42,7 +43,7 @@ class ReadingFromUrlSlicesTest {
         Flux<Slice> sliceFlux = readingFromUrlSlices.readFrom("stam");
 
         StepVerifier.create(sliceFlux)
-                .expectNext(Slice.builder().content(bytes).slice(0).url("stam").build())
+                .expectNext(Slice.builder().content("Hello").slice(0).url("stam").build())
                 .verifyComplete();
     }
 
@@ -67,8 +68,8 @@ class ReadingFromUrlSlicesTest {
         Flux<Slice> sliceFlux = readingFromUrlSlices.readFrom("stam");
 
         StepVerifier.create(sliceFlux)
-                .expectNext(Slice.builder().content("Hello ".getBytes()).slice(0).url("stam").build())
-                .expectNext(Slice.builder().content("World".getBytes()).slice(1).url("stam").build())
+                .expectNext(Slice.builder().content("Hello ").slice(0).url("stam").build())
+                .expectNext(Slice.builder().content("World").slice(1).url("stam").build())
                 .verifyComplete();
     }
 
@@ -93,8 +94,8 @@ class ReadingFromUrlSlicesTest {
         Flux<Slice> sliceFlux = readingFromUrlSlices.readFrom("stam");
 
         StepVerifier.create(sliceFlux)
-                .expectNext(Slice.builder().content("Hello ".getBytes()).slice(0).url("stam").build())
-                .expectNext(Slice.builder().content("World!".getBytes()).slice(1).url("stam").build())
+                .expectNext(Slice.builder().content("Hello ").slice(0).url("stam").build())
+                .expectNext(Slice.builder().content("World!").slice(1).url("stam").build())
                 .verifyComplete();
     }
 
@@ -112,29 +113,23 @@ class ReadingFromUrlSlicesTest {
     }
 
     @Test
-    void whenReadThrowsIOException_expectedRuntimeThrownWrappedIOException() throws Exception {
+    void whenReadThrowsIOException_expectedReturnedErrorSlice() throws Exception {
         ReadingFromUrlSlices.ChannelCreatorFactory factoryMock = createFactoryMockWithException(IOException.class);
         ReadingFromUrlSlices readingFromUrlSlices = new ReadingFromUrlSlices(Optional.of(factoryMock), 10000);
 
-        RuntimeException ex = assertThrows(
-            RuntimeException.class,
-            () -> readingFromUrlSlices.readFrom("stam").blockLast()
-        );
-
-        assertThat(ex).hasCauseExactlyInstanceOf(IOException.class);
+        StepVerifier.create(readingFromUrlSlices.readFrom("stam"))
+                .expectNext(Utils.errorSlice())
+                .verifyComplete();
     }
 
     @Test
-    void whenReadThrowsRuntime_IllegalArgumentException_expectedIllegalArgumentExceptionWithNoCause() throws Exception {
+    void whenReadThrowsRuntime_IllegalArgumentException_expectedReturnedErrorSlice() throws Exception {
         ReadingFromUrlSlices.ChannelCreatorFactory factoryMock = createFactoryMockWithException(IllegalArgumentException.class);
         ReadingFromUrlSlices readingFromUrlSlices = new ReadingFromUrlSlices(Optional.of(factoryMock), 10000);
 
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-            () -> readingFromUrlSlices.readFrom("stam").blockLast()
-        );
-
-        assertThat(ex).hasNoCause();
+        StepVerifier.create(readingFromUrlSlices.readFrom("stam"))
+                .expectNext(Utils.errorSlice())
+                .verifyComplete();
     }
 
     static ReadingFromUrlSlices.ChannelCreatorFactory createFactoryMockWithException(Class<? extends Throwable> t) throws Exception {

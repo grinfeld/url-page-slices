@@ -1,0 +1,11 @@
+spring:
+  data:
+    cassandra:
+      keyspace-name: example
+      schema-action: none
+
+slices:
+  urls:
+  - "https://www.google.com/"
+  - "https://www.ynet.co.il/"
+  - "https://www.notexistssuchurl.co.il/"

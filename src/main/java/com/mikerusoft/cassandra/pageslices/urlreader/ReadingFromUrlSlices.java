@@ -1,6 +1,7 @@
 package com.mikerusoft.cassandra.pageslices.urlreader;
 
 import com.mikerusoft.cassandra.pageslices.model.jpa.Slice;
+import com.mikerusoft.cassandra.pageslices.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -46,7 +47,9 @@ public class ReadingFromUrlSlices implements ReadingSlicesService<String> {
             () -> new SliceChannelNioReader(factory.create(urlSource), bufferSizeBytes),
             this::readFromSliceChannelBuffer,
             SliceChannelReader::clear
-        ).map(slice -> slice.toBuilder().url(urlSource).build());
+        ).map(slice -> slice.toBuilder().url(urlSource).build())
+                // we want on error return some ERROR object to filter it after that
+                .onErrorReturn(Utils.errorSlice());
     }
 
     private SliceChannelReader readFromSliceChannelBuffer(SliceChannelReader slice, SynchronousSink<Slice> sink) {
@@ -102,7 +105,8 @@ public class ReadingFromUrlSlices implements ReadingSlicesService<String> {
 
             int slice = this.counter.getAndIncrement();
 
-            return bytes != null && bytes.length > 0 ? Slice.builder().content(bytes).slice(slice).build() : null;
+            return bytes != null && bytes.length > 0 ?
+                    Slice.builder().content(new String(bytes)).slice(slice).build() : null;
         }
 
         @Override
