@@ -27,3 +27,8 @@ HELP.md
 
 ### VS Code ###
 .vscode/
+
+### maven ###
+.mvn/*
+mvnw
+mvnw.cmd
